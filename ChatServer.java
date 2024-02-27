@@ -23,13 +23,15 @@ class ChatHandler implements URLHandler {
         return "Invalid parameters: " + String.join("&", params);
       }
     }
+    else if (url.getPath().equals("/")){
+      return this.chatHistory;
+    }
     // expect /retrieve-history?file=<name>
     else if (url.getPath().equals("/retrieve-history")) {
       String[] params = url.getQuery().split("&");
       String[] shouldBeFile = params[0].split("=");
       if (shouldBeFile[0].equals("file")) {
         String fileName = shouldBeFile[1];
-        // String fileName = shouldBeFileName[0]; // bug4: should be shouldBeFile[1]
         ChatHistoryReader reader = new ChatHistoryReader();
         try {
           String[] contents = reader.readFileAsArray("chathistory/" + fileName);
@@ -59,7 +61,46 @@ class ChatHandler implements URLHandler {
         }
       }
     }
-
+    // expect /semantic-analysis?user=<name>
+    else if (url.getPath().equals("/semantic-analysis")) {
+      String[] params = url.getQuery().split("&");
+      String[] shouldBeUser = params[0].split("=");
+      String matchingMessages = "";
+      if (shouldBeUser[0].equals("user")) {
+        String[] chatHistoryArr = this.chatHistory.split("\n\n");
+        int index = 0;
+        while (index < chatHistoryArr.length) {
+          String line = chatHistoryArr[index];
+          int numberOfExclamationMarks = 0;
+          String analysis = "";
+          index += 1;
+          int[] codePoints = new int[0];
+          if (line.contains(shouldBeUser[1]))
+            codePoints = line.codePoints().toArray();
+            int characterIndex = 0;
+            while (characterIndex < codePoints.length) {
+              int character = codePoints[characterIndex];
+              if (character == (int) '!') {
+                numberOfExclamationMarks += 1;
+              }
+              if (new String(Character.toChars(character)).equals("😂")) {
+                analysis = " This message has a LOL vibe.";
+              }
+              if (new String(Character.toChars(character)).equals("🥹")) {
+                analysis = " This message has a awwww vibe.";
+              } else {
+              characterIndex += 1;
+               }
+            }
+            if (numberOfExclamationMarks > 2) {
+              analysis += " This message ends forcefully.";
+            }
+            matchingMessages += line + analysis + "\n\n";
+          }
+        }
+      
+      return matchingMessages;
+    }
     return this.chatHistory;
   }
 }
